@@ -14,7 +14,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db = getDatabase(app, process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL);
 const auth = getAuth(app);
 
 export { db, auth };
