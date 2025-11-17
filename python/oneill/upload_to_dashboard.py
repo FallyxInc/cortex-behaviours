@@ -21,7 +21,8 @@ required_vars = [
     'FIREBASE_TOKEN_URI',
     'FIREBASE_AUTH_PROVIDER_X509_CERT_URL',
     'FIREBASE_CLIENT_X509_CERT_URL',
-    'FIREBASE_UNIVERSE_DOMAIN'
+    'FIREBASE_UNIVERSE_DOMAIN',
+    'FIREBASE_DATABASE_URL'
 ]
 
 missing_vars = [var for var in required_vars if not os.getenv(var)]
@@ -49,7 +50,7 @@ try:
     })
 
     firebase_admin.initialize_app(cred, {
-        'databaseURL': 'https://fallyx-9d599-default-rtdb.firebaseio.com/'
+        'databaseURL': os.getenv('FIREBASE_DATABASE_URL')
     })
 except Exception as e:
     print(f"Error initializing Firebase: {str(e)}")
