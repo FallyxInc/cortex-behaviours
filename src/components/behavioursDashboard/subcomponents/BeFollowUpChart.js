@@ -112,8 +112,8 @@ const FollowUpChart = ({data, desiredYear, desiredMonth}) => {
             datasets: [
                 {
             data: newData,
-            backgroundColor: 'rgba(76, 175, 80, 0.6)',
-            borderColor: 'rgb(76, 175, 80)',
+            backgroundColor: 'rgba(6, 182, 212, 0.6)',
+            borderColor: 'rgb(6, 182, 212)',
             borderWidth: 1,
                 },
             ],

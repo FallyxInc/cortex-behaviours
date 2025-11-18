@@ -163,7 +163,7 @@ export default function FileUpload() {
             </div>
             {pdfFiles.length > 0 && (
               <div className="mt-2">
-                <p className="text-sm text-green-600 font-medium">Selected {pdfFiles.length} file(s):</p>
+                <p className="text-sm font-medium" style={{ color: '#06b6d4' }}>Selected {pdfFiles.length} file(s):</p>
                 <ul className="mt-1 text-sm text-gray-600">
                   {pdfFiles.map((file, index) => (
                     <li key={index} className="truncate">• {file.name}</li>
@@ -218,7 +218,7 @@ export default function FileUpload() {
             </div>
             {excelFiles.length > 0 && (
               <div className="mt-2">
-                <p className="text-sm text-green-600 font-medium">Selected {excelFiles.length} file(s):</p>
+                <p className="text-sm font-medium" style={{ color: '#06b6d4' }}>Selected {excelFiles.length} file(s):</p>
                 <ul className="mt-1 text-sm text-gray-600">
                   {excelFiles.map((file, index) => (
                     <li key={index} className="truncate">• {file.name}</li>
@@ -290,7 +290,7 @@ export default function FileUpload() {
           </div>
 
           {message && (
-            <div className={`text-sm ${message.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
+            <div className={`text-sm ${message.includes('Error') ? 'text-red-600' : ''}`} style={!message.includes('Error') ? { color: '#06b6d4' } : {}}>
               {message}
             </div>
           )}

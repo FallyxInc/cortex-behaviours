@@ -1,47 +1,37 @@
 import React, { useState, useEffect, Fragment} from 'react';
 
 const BeTrackingTable = ({filteredData, cleanDuplicateText, storageKey = 'behaviours_checked_items'}) => {
-    const [checkedItems, setCheckedItems] = useState(new Set());
+    const [selectedItem, setSelectedItem] = useState(null);
     const [expandedNotes, setExpandedNotes] = useState({});
 
-    // Load checked items from localStorage on component mount
+    // Load selected item from localStorage on component mount
     useEffect(() => {
         try {
-            const savedCheckedItems = localStorage.getItem(storageKey);
-            if (savedCheckedItems) {
-                const parsedItems = JSON.parse(savedCheckedItems);
-                setCheckedItems(new Set(parsedItems));
+            const savedSelectedItem = localStorage.getItem(storageKey);
+            if (savedSelectedItem) {
+                setSelectedItem(savedSelectedItem);
             }
         } catch (error) {
-            console.error('Error loading checked items from localStorage:', error);
+            console.error('Error loading selected item from localStorage:', error);
         }
     }, [storageKey]);
 
-    // Save checked items to localStorage whenever checkedItems changes
+    // Save selected item to localStorage whenever it changes
     useEffect(() => {
         try {
-            localStorage.setItem(storageKey, JSON.stringify([...checkedItems]));
-        } catch (error) {
-            console.error('Error saving checked items to localStorage:', error);
-        }
-    }, [checkedItems, storageKey]);
-
-    // Handle checkbox change
-    const handleCheckboxChange = (incidentNumber) => {
-        setCheckedItems(prev => {
-            const newCheckedItems = new Set(prev);
-            if (newCheckedItems.has(incidentNumber)) {
-                newCheckedItems.delete(incidentNumber);
+            if (selectedItem) {
+                localStorage.setItem(storageKey, selectedItem);
             } else {
-                newCheckedItems.add(incidentNumber);
+                localStorage.removeItem(storageKey);
             }
-            return newCheckedItems;
-        });
-    };
+        } catch (error) {
+            console.error('Error saving selected item to localStorage:', error);
+        }
+    }, [selectedItem, storageKey]);
 
-    // Clear all checked items (optional utility function)
-    const clearAllChecked = () => {
-        setCheckedItems(new Set());
+    // Handle radio button change (single selection)
+    const handleRadioChange = (incidentNumber) => {
+        setSelectedItem(selectedItem === incidentNumber ? null : incidentNumber);
     };
 
     // Toggle expanded state for a specific note
@@ -53,23 +43,11 @@ const BeTrackingTable = ({filteredData, cleanDuplicateText, storageKey = 'behavi
     };
 
     return (
-        <div>
-                {/* Optional: Add a utility button to clear all checked items */}
-                {checkedItems.size > 0 && (
-                <div style={s.clearButtonContainer}>
-                    <button
-                        onClick={clearAllChecked}
-                        style={s.clearAllCheckedButton}
-                    >
-                        Clear All Checked ({checkedItems.size})
-                    </button>
-            </div>
-            )}
-
+        <div style={s.tableContainer}>
             <table style={s.table}>
                 <thead>
                     <tr>
-                        <th style={{ ...s.tableHeader, ...s.tableHeaderCheckbox }}>✓</th>
+                        <th style={{ ...s.tableHeader, ...s.radioHeader }}></th>
                         <th style={s.tableHeader}>#</th>
                         <th style={s.tableHeader}>Name</th>
                         <th style={s.tableHeader}>Date</th>
@@ -82,32 +60,35 @@ const BeTrackingTable = ({filteredData, cleanDuplicateText, storageKey = 'behavi
                         <th style={s.tableHeader}>Triggers</th>
                         <th style={s.tableHeader}>Interventions</th>
                         <th style={s.tableHeader}>Injuries</th>
-                        <th style={s.tableHeader}>Potential CI</th>
+                        <th style={{ ...s.tableHeader, ...s.lastHeader }}>Potential CI</th>
                         {/* Conditionally render Other Notes header if any item has other_notes */}
                         {filteredData && filteredData.some(item => item.other_notes) && (
-                            <th style={s.tableHeader}>Other Notes</th>
+                            <th style={{ ...s.tableHeader, ...s.lastHeader }}>Other Notes</th>
                         )}
                     </tr>
                 </thead>
                 <tbody id="fallsTableBody">
                     {filteredData && filteredData.map((item, i) => {
-                        const isChecked = checkedItems.has(item.incident_number);
-                        const rowStyle = isChecked ? s.checkedRow : {}; // Base checked row style
+                        const isSelected = selectedItem === item.incident_number;
 
-                        const summaryBgColor = item.summary?.includes('No Progress') && item.summary?.includes('24hrs of RIM') ? s.highlightRed : {};
-                        const triggersBgColor = cleanDuplicateText(item.triggers, 'triggers')?.includes('No Progress') && cleanDuplicateText(item.triggers, 'triggers')?.includes('24hrs of RIM') ? s.highlightRed : {};
-                        const interventionsBgColor = cleanDuplicateText(item.interventions, 'interventions')?.includes('No Progress') && cleanDuplicateText(item.interventions, 'interventions')?.includes('24hrs of RIM') ? s.highlightRed : {};
-
-                        const evenRowStyle = i % 2 === 1 ? s.evenRow : {}; // Apply even row background
+                        // Compliance check: Highlight red if "No Progress" and "24hrs of RIM" are found
+                        const summaryText = item.summary || '';
+                        const triggersText = cleanDuplicateText(item.triggers, 'triggers') || '';
+                        const interventionsText = cleanDuplicateText(item.interventions, 'interventions') || '';
+                        
+                        const summaryHasCompliance = summaryText.includes('No Progress') && summaryText.includes('24hrs of RIM');
+                        const triggersHasCompliance = triggersText.includes('No Progress') && triggersText.includes('24hrs of RIM');
+                        const interventionsHasCompliance = interventionsText.includes('No Progress') && interventionsText.includes('24hrs of RIM');
 
                         return (
-                            <tr key={i} style={{ ...evenRowStyle, ...rowStyle }}>
-                                <td style={{ ...s.tableCell, ...s.checkboxCell }}>
+                            <tr key={i} style={s.tableRow}>
+                                <td style={{ ...s.tableCell, ...s.radioCell }}>
                                     <input
-                                        type="checkbox"
-                                        checked={isChecked}
-                                        onChange={() => handleCheckboxChange(item.incident_number)}
-                                        style={s.checkboxInput}
+                                        type="radio"
+                                        name="table-selection"
+                                        checked={isSelected}
+                                        onChange={() => handleRadioChange(item.incident_number)}
+                                        style={s.radioInput}
                                     />
                                 </td>
                                 <td style={s.tableCell}>{item.incident_number}</td>
@@ -118,14 +99,14 @@ const BeTrackingTable = ({filteredData, cleanDuplicateText, storageKey = 'behavi
                                 <td style={s.tableCell}>{item.who_affected}</td>
                                 <td style={s.tableCell}>{item.prn}</td>
                                 <td style={s.tableCell}>{item.code_white}</td>
-                                <td style={{ ...s.tableCell, ...summaryBgColor }}>{item.summary}</td>
-                                <td style={{ ...s.tableCell, ...triggersBgColor }}>{cleanDuplicateText(item.triggers, 'triggers')}</td>
-                                <td style={{ ...s.tableCell, ...interventionsBgColor }}>{cleanDuplicateText(item.interventions, 'interventions')}</td>
+                                <td style={{ ...s.tableCell, ...(summaryHasCompliance ? s.highlightRed : {}) }}>{item.summary}</td>
+                                <td style={{ ...s.tableCell, ...(triggersHasCompliance ? s.highlightRed : {}) }}>{triggersText}</td>
+                                <td style={{ ...s.tableCell, ...(interventionsHasCompliance ? s.highlightRed : {}) }}>{interventionsText}</td>
                                 <td style={s.tableCell}>{item.injuries}</td>
-                                <td style={s.tableCell}>{item.CI || "Still Gathering Data/Unknown"}</td>
+                                <td style={{ ...s.tableCell, ...(filteredData && !filteredData.some(dataItem => dataItem.other_notes) ? s.lastCell : {}) }}>{item.CI || "Still Gathering Data/Unknown"}</td>
                                 {/* Conditionally render Other Notes cell if any item has other_notes */}
                                 {filteredData && filteredData.some(dataItem => dataItem.other_notes) && (
-                                    <td style={{ ...s.tableCell, whiteSpace: 'pre-wrap' }}>
+                                    <td style={{ ...s.tableCell, ...s.lastCell, whiteSpace: 'pre-wrap' }}>
                                         {item.other_notes ? 
                                             (() => {
                                                 const cleanedText = item.other_notes
@@ -184,69 +165,77 @@ const BeTrackingTable = ({filteredData, cleanDuplicateText, storageKey = 'behavi
 };
 
 const s = {
-    clearButtonContainer: {
-        marginBottom: '10px',
-        textAlign: 'right',
-    },
-    clearAllCheckedButton: {
-        padding: '5px 10px',
-        backgroundColor: '#6c757d',
-        color: 'white',
-        border: 'none',
-        borderRadius: '3px',
-        cursor: 'pointer',
-        fontSize: '12px',
-        transition: 'background-color 0.2s ease-in-out',
+    tableContainer: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        border: '1px solid #e5e7eb',
     },
     table: {
         width: '100%',
-        borderCollapse: 'collapse',
-        marginTop: '20px',
-        fontSize: '13px',
+        borderCollapse: 'separate',
+        borderSpacing: 0,
+        fontSize: '14px',
         tableLayout: 'auto',
+        backgroundColor: '#fff',
     },
     tableHeader: {
-        border: '1px solid #ddd',
-        padding: '4px 2px',
-        textAlign: 'center',
-        backgroundColor: '#e8f5e9',
+        borderRight: '1px solid #e5e7eb',
+        borderBottom: '2px solid #e5e7eb',
+        borderTop: 'none',
+        borderLeft: 'none',
+        padding: '12px 16px',
+        textAlign: 'left',
+        backgroundColor: '#f9fafb',
         fontWeight: '600',
-        fontSize: '13px',
+        fontSize: '14px',
+        color: '#374151',
         verticalAlign: 'middle',
         whiteSpace: 'nowrap',
     },
-    tableHeaderCheckbox: {
+    radioHeader: {
         textAlign: 'center',
-        width: '25px',
-        padding: '2px',
+        width: '50px',
+        padding: '12px 8px',
+        borderLeft: '1px solid #e5e7eb',
+    },
+    tableRow: {
+        backgroundColor: '#fff',
+        borderBottom: '1px solid #e5e7eb',
     },
     tableCell: {
-        border: '1px solid #ddd',
-        padding: '4px 2px',
+        borderRight: '1px solid #e5e7eb',
+        borderLeft: 'none',
+        borderTop: 'none',
+        padding: '12px 16px',
         textAlign: 'left',
         fontSize: '14px',
-        verticalAlign: 'top',
-        maxWidth: '120px',
-    },
-    checkboxCell: {
-        textAlign: 'center',
-        width: '25px',
-        padding: '2px',
+        color: '#1f2937',
         verticalAlign: 'middle',
+        lineHeight: '1.5',
     },
-    checkboxInput: {
+    radioCell: {
+        textAlign: 'center',
+        width: '50px',
+        padding: '12px 8px',
+        verticalAlign: 'middle',
+        borderLeft: '1px solid #e5e7eb',
+        borderRight: '1px solid #e5e7eb',
+    },
+    radioInput: {
         width: '18px',
         height: '18px',
         cursor: 'pointer',
         verticalAlign: 'middle',
+        accentColor: '#06b6d4',
     },
-    checkedRow: {
-        opacity: '0.6',
-        backgroundColor: '#f8f9fa',
-        textDecoration: 'line-through',
+    lastHeader: {
+        borderRight: '1px solid #e5e7eb',
     },
-    evenRow: {
-        backgroundColor: '#f8f8f8',
+    lastCell: {
+        borderRight: '1px solid #e5e7eb',
     },
     highlightRed: {
         backgroundColor: '#ffcdd2',

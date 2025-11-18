@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from '@/styles/Behaviours.module.css';
 import * as Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import { Chart, ArcElement, PointElement, LineElement } from 'chart.js';
 import { ref, onValue, off, get, update, child, set, serverTimestamp } from 'firebase/database';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -30,6 +31,7 @@ import BeFollowUpTable from './subcomponents/BeFollowUpTable.js';
 Chart.register(ArcElement, PointElement, LineElement);
 
 export default function BehavioursDashboard({ name, title, goal} ) {
+  const router = useRouter();
   const altName = name === 'ONCB'
     ? 'oneill'
     : name === 'MCB'
@@ -468,7 +470,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
           datasets: [
             {
               data: newData,
-              backgroundColor: ['rgba(76, 175, 80, 0.8)', 'rgba(200, 200, 200, 0.2)'],
+              backgroundColor: ['rgba(6, 182, 212, 0.8)', 'rgba(200, 200, 200, 0.2)'],
               circumference: 180,
               rotation: 270,
             },
@@ -483,7 +485,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
             {
               label: 'Number of Behaviours',
               data: threeMonthY,
-              borderColor: 'rgb(76, 175, 80)',
+              borderColor: 'rgb(6, 182, 212)',
               tension: 0.1,
             },
           ],
@@ -1139,14 +1141,51 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
     return text;
   };
 
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   return (
     <div className={styles.dashboard} ref={tableRef}>
-      <div className={styles.topHeader}
-        style={
-          {marginLeft: '10px'}
-        }>
-        <h1>{title}</h1>
-        <div className={styles.dateSelector} >
+      {/* Main Header */}
+      <div className={styles.mainHeader}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.dashboardTitle}>{title}</h1>
+          <div className={styles.navTabs}>
+            <button 
+              className={`${styles.navTab} ${!showFollowUpTable ? styles.navTabActive : ''}`}
+              onClick={() => setShowFollowUpTable(false)}
+            >
+              Behaviours Tracking
+            </button>
+            <button 
+              className={`${styles.navTab} ${showFollowUpTable ? styles.navTabActive : ''}`}
+              onClick={() => setShowFollowUpTable(true)}
+            >
+              Follow-ups
+            </button>
+          </div>
+        </div>
+        <div className={styles.headerRight}>
+          <div className={styles.userInfo}>
+            <span className={styles.welcomeText}>
+              Welcome, {auth.currentUser?.email || 'User'} ({title})
+            </span>
+          </div>
+          <button className={styles['logout-button']} onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className={styles.filtersSection}>
+        <div className={styles.dateSelector}>
           <button
             onClick={() => setShowFollowUpTable(!showFollowUpTable)}
             className={`${styles.toggleButton} ${showFollowUpTable ? styles.active : styles.inactive}`}
@@ -1172,10 +1211,6 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
           </select>
         </div>
       </div>
-
-      {/* <button className="logout-button" onClick={logout}>
-        Log Out
-      </button> */}
 
       <div className={styles['chart-container']}>
           {/* {analysisChartData.datasets.length > 0 && <Bar data={analysisChartData} options={analysisChartOptions} />} */}
@@ -1219,17 +1254,17 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
       
               <div style={{ 
                 backgroundColor: '#F8F9FA', 
-                border: '2px solid #28a745', 
+                border: '2px solid #06b6d4', 
                 borderRadius: '12px', 
                 padding: '20px',
-                boxShadow: '0 4px 8px rgba(40, 167, 69, 0.15)',
+                boxShadow: '0 4px 8px rgba(6, 182, 212, 0.15)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ 
-                    backgroundColor: '#28a745', 
+                    backgroundColor: '#06b6d4', 
                     borderRadius: '20%', 
                     padding: '10px',
                     width: '60px', 
@@ -1258,7 +1293,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>-3%</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>-3%</div>
                   <div style={{ fontSize: '12px', color: '#676879' }}>vs last month</div>
                 </div>
               </div>
@@ -1266,17 +1301,17 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
               {/* Behaviours Worsened Card */}
               <div style={{ 
                 backgroundColor: '#F8F9FA', 
-                border: '2px solid #28a745', 
+                border: '2px solid #06b6d4', 
                 borderRadius: '12px', 
                 padding: '20px',
-                boxShadow: '0 4px 8px rgba(40, 167, 69, 0.15)',
+                boxShadow: '0 4px 8px rgba(6, 182, 212, 0.15)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ 
-                    backgroundColor: '#28a745', 
+                    backgroundColor: '#06b6d4', 
                     borderRadius: '20%', 
                     padding: '10px',
                     width: '60px', 
@@ -1305,7 +1340,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>+5%</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>+5%</div>
                   <div style={{ fontSize: '12px', color: '#676879' }}>vs last month</div>
                 </div>
               </div>
@@ -1313,17 +1348,17 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
               {/* Behaviours Improved Card */}
               <div style={{ 
                 backgroundColor: '#F8F9FA', 
-                border: '2px solid #28a745', 
+                border: '2px solid #06b6d4', 
                 borderRadius: '12px', 
                 padding: '20px',
-                boxShadow: '0 4px 8px rgba(40, 167, 69, 0.15)',
+                boxShadow: '0 4px 8px rgba(6, 182, 212, 0.15)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{ 
-                    backgroundColor: '#28a745', 
+                    backgroundColor: '#06b6d4', 
                     borderRadius: '20%', 
                     padding: '10px',
                     width: '60px', 
@@ -1352,7 +1387,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>+8%</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>+8%</div>
                   <div style={{ fontSize: '12px', color: '#676879' }}>vs last month</div>
                 </div>
               </div>
@@ -1460,19 +1495,21 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
         </div>
       </div>
 
-      {!showFollowUpTable ? (
-        <BeTrackingTable 
-          filteredData={filteredData} 
-          cleanDuplicateText={cleanDuplicateText} 
-          storageKey={`${name}_${desiredYear}_${desiredMonth}_behaviours_checked`}
-        />
-      ) : (
-        <BeFollowUpTable 
-          filteredData={filteredFollowUpData}
-          DUMMY_FOLLOW_UP_DATA={DUMMY_FOLLOW_UP_DATA}
-          followUpLoading={followUpLoading}
-        />
-      )}
+      <div className={styles.tableSection}>
+        {!showFollowUpTable ? (
+          <BeTrackingTable 
+            filteredData={filteredData} 
+            cleanDuplicateText={cleanDuplicateText} 
+            storageKey={`${name}_${desiredYear}_${desiredMonth}_behaviours_checked`}
+          />
+        ) : (
+          <BeFollowUpTable 
+            filteredData={filteredFollowUpData}
+            DUMMY_FOLLOW_UP_DATA={DUMMY_FOLLOW_UP_DATA}
+            followUpLoading={followUpLoading}
+          />
+        )}
+      </div>
       {isModalOpen && (
         <div className={styles.modal}>
           <div className={styles.modalContent}>
@@ -1530,7 +1567,29 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                 <button 
                   onClick={() => residentsNeedingReview[currentResidentIndex] && 
                     markReviewDone(residentsNeedingReview[currentResidentIndex])}
-                  style={{ padding: '10px', backgroundColor: 'green', color: 'white', fontFamily: 'inherit', fontSize: '16px', borderRadius: '12px', border: 'transparent', cursor: 'pointer'}}
+                  style={{ 
+                    padding: '12px 20px', 
+                    background: 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)', 
+                    color: 'white', 
+                    fontFamily: 'inherit', 
+                    fontSize: '16px', 
+                    fontWeight: '600',
+                    borderRadius: '12px', 
+                    border: 'transparent', 
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(6, 182, 212, 0.4)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.3)';
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)';
+                  }}
                 >
                   Yes, Review Complete
                 </button>

@@ -63,7 +63,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2" style={{ borderColor: '#06b6d4' }}></div>
       </div>
     );
   }
@@ -93,7 +93,21 @@ export default function AdminPage() {
               </span>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white bg-blue-500 hover:bg-blue-600"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all text-white"
+                style={{ 
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)',
+                  boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(6, 182, 212, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.3)';
+                }}
               >
                 Logout
               </button>
@@ -109,9 +123,20 @@ export default function AdminPage() {
               onClick={() => setActiveTab('homes')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300 ${
                 activeTab === 'homes'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300'
+                  ? 'text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
+              style={activeTab === 'homes' ? { borderColor: '#06b6d4', color: '#06b6d4' } : {}}
+              onMouseEnter={(e) => {
+                if (activeTab !== 'homes') {
+                  e.currentTarget.style.borderColor = '#bae6fd';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== 'homes') {
+                  e.currentTarget.style.borderColor = 'transparent';
+                }
+              }}
             >
               Home Management
             </button>
@@ -119,9 +144,20 @@ export default function AdminPage() {
               onClick={() => setActiveTab('users')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300 ${
                 activeTab === 'users'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300'
+                  ? 'text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
+              style={activeTab === 'users' ? { borderColor: '#06b6d4', color: '#06b6d4' } : {}}
+              onMouseEnter={(e) => {
+                if (activeTab !== 'users') {
+                  e.currentTarget.style.borderColor = '#bae6fd';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== 'users') {
+                  e.currentTarget.style.borderColor = 'transparent';
+                }
+              }}
             >
               User Management
             </button>
@@ -129,9 +165,20 @@ export default function AdminPage() {
               onClick={() => setActiveTab('upload')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-300 ${
                 activeTab === 'upload'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300'
+                  ? 'text-gray-900'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
+              style={activeTab === 'upload' ? { borderColor: '#06b6d4', color: '#06b6d4' } : {}}
+              onMouseEnter={(e) => {
+                if (activeTab !== 'upload') {
+                  e.currentTarget.style.borderColor = '#bae6fd';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== 'upload') {
+                  e.currentTarget.style.borderColor = 'transparent';
+                }
+              }}
             >
               File Upload
             </button>

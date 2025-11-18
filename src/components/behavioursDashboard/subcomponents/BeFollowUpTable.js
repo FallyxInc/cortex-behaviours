@@ -48,7 +48,7 @@ const s = {
         border: '1px solid #ddd',
         padding: '4px 2px',
         textAlign: 'center',
-        backgroundColor: '#e8f5e9',
+        backgroundColor: '#e0f7fa',
         fontWeight: '600',
         fontSize: '13px',
         // verticalAlign: 'middle',

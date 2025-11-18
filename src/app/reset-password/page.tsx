@@ -38,8 +38,22 @@ export default function UpdatePasswordPage() {
   };
 
   return (
-    <div className={styles.updatePasswordContainer}>
-      <h2 className={styles.updatePasswordTitle}>Update Password</h2>
+    <div style={{
+      background: 'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%)',
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: 0,
+      padding: '20px',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
+    }}>
+      <div className={styles.updatePasswordContainer}>
+        <h2 className={styles.updatePasswordTitle}>Update Password</h2>
       {error && <p className={styles.errorMessage}>{error}</p>}
       {message && <p className={styles.successMessage}>{message}</p>}
       <form onSubmit={handleUpdatePassword} className={styles.updatePasswordForm}>
@@ -83,6 +97,7 @@ export default function UpdatePasswordPage() {
           Update Password
         </button>
       </form>
+      </div>
     </div>
   );
 }

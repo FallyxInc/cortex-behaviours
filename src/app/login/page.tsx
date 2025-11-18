@@ -46,9 +46,10 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <img src="/assets/fallyxlogo.jpeg" alt="Logo" className="logoLogin" />
-      <h2 className="login-title">Behaviours Dashboard Login</h2>
+    <div className="login-page-wrapper">
+      <div className="login-container">
+        <img src="/assets/fallyxlogo.jpeg" alt="Logo" className="logoLogin" />
+        <h2 className="login-title">Behaviours Dashboard Login</h2>
 
       <div className="login-input-group">
         <label htmlFor="login-email">Username</label>
@@ -90,6 +91,7 @@ export default function Login() {
 
       <div className="resetPasswordLink">
         <Link href="/reset-password">Forgot Password? Reset here</Link>
+      </div>
       </div>
     </div>
   );

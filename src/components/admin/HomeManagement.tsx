@@ -101,7 +101,18 @@ export default function HomeManagement() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+            className="text-white px-4 py-2 rounded-md text-sm font-medium transition-all hover:shadow-lg"
+            style={{ 
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
             {showCreateForm ? 'Cancel' : 'Create Home'}
           </button>
@@ -121,8 +132,8 @@ export default function HomeManagement() {
       )}
 
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-md p-4">
-          <div className="text-green-800">{successMessage}</div>
+        <div className="rounded-md p-4" style={{ backgroundColor: '#e0f7fa', border: '1px solid #b2ebf2' }}>
+          <div style={{ color: '#0e7490' }}>{successMessage}</div>
         </div>
       )}
 

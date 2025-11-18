@@ -313,8 +313,8 @@ export default function UserManagement() {
 
       {message && (
         <div className={`p-4 rounded-md ${
-          messageType === 'error' ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800'
-        }`}>
+          messageType === 'error' ? 'bg-red-50 text-red-800' : ''
+        }`} style={messageType !== 'error' ? { backgroundColor: '#e0f7fa', color: '#0e7490' } : {}}>
           {message}
         </div>
       )}
