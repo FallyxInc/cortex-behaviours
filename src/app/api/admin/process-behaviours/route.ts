@@ -3,8 +3,18 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { adminDb } from '@/lib/firebase-admin';
 
 const execAsync = promisify(exec);
+
+// Map home name to altName (same logic as BehavioursDashboard)
+function getAltName(home: string): string {
+  if (home === 'ONCB') return 'oneill';
+  if (home === 'MCB') return 'millCreek';
+  if (home === 'berkshire') return 'berkshire';
+  if (home === 'banwell') return 'banwell';
+  return home;
+}
 
 export async function POST(request: NextRequest) {
   console.log('🚀 [API] Starting behaviour files processing...');
@@ -15,11 +25,91 @@ export async function POST(request: NextRequest) {
     const pdfCount = parseInt(formData.get('pdfCount') as string) || 0;
     const excelCount = parseInt(formData.get('excelCount') as string) || 0;
     
-    console.log('📊 [API] Request parameters:', { home, pdfCount, excelCount });
+    // Get overview metrics
+    const antipsychoticsPercentage = formData.get('antipsychoticsPercentage') as string;
+    const antipsychoticsChange = formData.get('antipsychoticsChange') as string;
+    const antipsychoticsResidents = formData.get('antipsychoticsResidents') as string;
+    
+    const worsenedPercentage = formData.get('worsenedPercentage') as string;
+    const worsenedChange = formData.get('worsenedChange') as string;
+    const worsenedResidents = formData.get('worsenedResidents') as string;
+    
+    const improvedPercentage = formData.get('improvedPercentage') as string;
+    const improvedChange = formData.get('improvedChange') as string;
+    const improvedResidents = formData.get('improvedResidents') as string;
+    
+    console.log('📊 [API] Request parameters:', { home, pdfCount, excelCount, hasMetrics: !!(antipsychoticsPercentage || worsenedPercentage || improvedPercentage) });
 
-    if (pdfCount === 0 || excelCount === 0 || !home) {
-      console.error('❌ [API] Missing required files or home');
-      return NextResponse.json({ error: 'Missing required files or home' }, { status: 400 });
+    if (!home) {
+      console.error('❌ [API] Missing home');
+      return NextResponse.json({ error: 'Home is required' }, { status: 400 });
+    }
+
+    // If no files, we can still save metrics
+    const hasFiles = pdfCount > 0 && excelCount > 0;
+    const hasMetrics = !!(antipsychoticsPercentage || worsenedPercentage || improvedPercentage);
+    
+    // If no files and no metrics, that's okay - just return success (preserves existing values)
+    if (!hasFiles && !hasMetrics) {
+      return NextResponse.json({
+        success: true,
+        message: 'No changes made - existing values preserved',
+        metricsSaved: false
+      });
+    }
+
+    // Save metrics to Firebase if provided (if not provided, existing values are preserved)
+    if (hasMetrics) {
+      const altName = getAltName(home);
+      const metricsRef = adminDb.ref(`/${altName}/overviewMetrics`);
+      
+      const metricsData: any = {};
+      
+      if (antipsychoticsPercentage) {
+        metricsData.antipsychotics = {
+          percentage: parseInt(antipsychoticsPercentage) || 0,
+          change: parseInt(antipsychoticsChange || '0') || 0,
+          residents: antipsychoticsResidents ? antipsychoticsResidents.split(',').map(r => r.trim()).filter(r => r) : []
+        };
+      }
+      
+      if (worsenedPercentage) {
+        metricsData.worsened = {
+          percentage: parseInt(worsenedPercentage) || 0,
+          change: parseInt(worsenedChange || '0') || 0,
+          residents: worsenedResidents ? worsenedResidents.split(',').map(r => r.trim()).filter(r => r) : []
+        };
+      }
+      
+      if (improvedPercentage) {
+        metricsData.improved = {
+          percentage: parseInt(improvedPercentage) || 0,
+          change: parseInt(improvedChange || '0') || 0,
+          residents: improvedResidents ? improvedResidents.split(',').map(r => r.trim()).filter(r => r) : []
+        };
+      }
+      
+      // Get existing metrics to preserve values not being updated
+      const existingSnapshot = await metricsRef.once('value');
+      const existingData = existingSnapshot.exists() ? existingSnapshot.val() : {};
+      
+      // Merge existing data with new data (only update provided metrics)
+      const mergedData = {
+        ...existingData,
+        ...metricsData
+      };
+      
+      await metricsRef.set(mergedData);
+      console.log('✅ [API] Metrics saved to Firebase');
+    }
+
+    // If no files, return early after saving metrics
+    if (!hasFiles) {
+      return NextResponse.json({
+        success: true,
+        message: 'Metrics saved successfully',
+        metricsSaved: true
+      });
     }
 
     const pdfFiles: File[] = [];
@@ -140,11 +230,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Files processed successfully',
+      message: 'Files processed successfully' + (hasMetrics ? ' and metrics saved' : ''),
       fileCounts: {
         pdfs: pdfFiles.length,
         excels: excelFiles.length
-      }
+      },
+      metricsSaved: hasMetrics
     });
 
   } catch (error) {

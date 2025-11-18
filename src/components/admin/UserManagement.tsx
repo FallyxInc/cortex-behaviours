@@ -305,7 +305,21 @@ export default function UserManagement() {
         <h3 className="text-xl font-semibold text-gray-900">User Management</h3>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          className="text-white px-4 py-2 rounded-md text-sm font-medium transition-all hover:shadow-lg"
+          style={{ 
+            background: 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)',
+            boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(6, 182, 212, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.3)';
+          }}
         >
           Add New User
         </button>

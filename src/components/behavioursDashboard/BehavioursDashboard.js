@@ -27,6 +27,7 @@ import AnalysisChart from './subcomponents/BeAnalysisChart.js';
 import BeTrackingTable from './subcomponents/BeTrackingTable.js';
 import FollowUpChart from './subcomponents/BeFollowUpChart.js';
 import BeFollowUpTable from './subcomponents/BeFollowUpTable.js';
+import BehavioursReports from './subcomponents/BehavioursReports.js';
 
 Chart.register(ArcElement, PointElement, LineElement);
 
@@ -115,6 +116,7 @@ export default function BehavioursDashboard({ name, title, goal} ) {
   const [threeMonthData, setThreeMonthData] = useState(new Map());
   const [followUpData, setFollowUpData] = useState([]);
   const [showFollowUpTable, setShowFollowUpTable] = useState(false);
+  const [showReports, setShowReports] = useState(false);
   const [followUpLoading, setFollowUpLoading] = useState(true);
   const getCurrentMonth = () => {
     const today = new Date();
@@ -153,6 +155,13 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
   const [currentRowIndex, setCurrentRowIndex] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showResidentNames, setShowResidentNames] = useState(false);
+
+  // Overview metrics state
+  const [overviewMetrics, setOverviewMetrics] = useState({
+    antipsychotics: { percentage: 15, change: -3, residents: ['John Smith', 'Mary Johnson', 'Robert Davis'] },
+    worsened: { percentage: 28, change: 5, residents: ['Sarah Wilson', 'Michael Brown', 'Lisa Anderson'] },
+    improved: { percentage: 57, change: 8, residents: ['David Miller', 'Jennifer Taylor', 'Thomas White'] }
+  });
 
   const [currentCauseOfFall, setCurrentCauseOfFall] = useState('');
   const [currentCauseRowIndex, setCurrentCauseRowIndex] = useState(null);
@@ -806,6 +815,32 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
     };
   }, [desiredMonth, desiredYear]);
 
+  // Fetch overview metrics from Firebase
+  useEffect(() => {
+    const metricsRef = ref(db, `/${altName}/overviewMetrics`);
+    const metricsListener = onValue(metricsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const metricsData = snapshot.val();
+        // Default values if not present
+        const defaultMetrics = {
+          antipsychotics: { percentage: 15, change: -3, residents: ['John Smith', 'Mary Johnson', 'Robert Davis'] },
+          worsened: { percentage: 28, change: 5, residents: ['Sarah Wilson', 'Michael Brown', 'Lisa Anderson'] },
+          improved: { percentage: 57, change: 8, residents: ['David Miller', 'Jennifer Taylor', 'Thomas White'] }
+        };
+        setOverviewMetrics({
+          antipsychotics: metricsData.antipsychotics || defaultMetrics.antipsychotics,
+          worsened: metricsData.worsened || defaultMetrics.worsened,
+          improved: metricsData.improved || defaultMetrics.improved
+        });
+      }
+      // If no data exists, keep the default values (no error)
+    });
+
+    return () => {
+      off(metricsRef, metricsListener);
+    };
+  }, [altName]);
+
   useEffect(() => {
     updateFallsChart();
     // console.log('Falls Chart');
@@ -1157,27 +1192,60 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
         <div className={styles.filtersRow}>
           <div className={styles.dateSelector}>
             <button
-              onClick={() => setShowFollowUpTable(!showFollowUpTable)}
-              className={`${styles.toggleButton} ${showFollowUpTable ? styles.active : styles.inactive}`}
+              onClick={() => {
+                setShowFollowUpTable(false);
+                setShowReports(false);
+              }}
+              className={`${styles.toggleButton} ${!showFollowUpTable && !showReports ? styles.active : styles.inactive}`}
             >
-              {showFollowUpTable ? 'Show Behaviours' : 'Show Follow-ups'}
+              Behaviours
+            </button>
+            <button
+              onClick={() => {
+                setShowFollowUpTable(true);
+                setShowReports(false);
+              }}
+              className={`${styles.toggleButton} ${showFollowUpTable && !showReports ? styles.active : styles.inactive}`}
+            >
+              Follow-ups
             </button>
 
-            <select className={styles.selector} onChange={handleYearChange} value={desiredYear}>
-              {Object.keys(availableYearMonth).map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
+            {/* Date Picker - Convert month name to YYYY-MM format */}
+            <input
+              type="month"
+              className={styles.selector}
+              value={`${desiredYear}-${months_backword[desiredMonth] || '01'}`}
+              onChange={(e) => {
+                const [year, monthNum] = e.target.value.split('-');
+                const monthName = Object.keys(months_backword).find(key => months_backword[key] === monthNum);
+                if (monthName && availableYearMonth[year]?.includes(monthName)) {
+                  setDesiredYear(year);
+                  setDesiredMonth(monthName);
+                }
+              }}
+              style={{ 
+                marginBottom: '10px',
+                height: 'auto'
+              }}
+            />
 
-            <select className={styles.selector} onChange={handleMonthChange} value={desiredMonth}>
-              {(availableYearMonth[desiredYear] || []).map((month) => (
-                <option key={month} value={month}>
-                  {month}
-                </option>
-              ))}
-            </select>
+            {/* Grey Divider */}
+            <div style={{
+              width: '1px',
+              height: '36px',
+              backgroundColor: '#d1d5db',
+              margin: '0 10px'
+            }} />
+
+            <button
+              onClick={() => {
+                setShowFollowUpTable(false);
+                setShowReports(true);
+              }}
+              className={`${styles.toggleButton} ${showReports ? styles.active : styles.inactive}`}
+            >
+              Reports
+            </button>
           </div>
           <div className={styles.headerRight}>
             <div className={styles.userInfo}>
@@ -1192,25 +1260,34 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
         </div>
       </div>
 
-      <div className={styles['chart-container']}>
-          {/* {analysisChartData.datasets.length > 0 && <Bar data={analysisChartData} options={analysisChartOptions} />} */}
-        {showFollowUpTable &&
-          <FollowUpChart
-            data={(followUpData.length > 0 ? filteredFollowUpData : DUMMY_FOLLOW_UP_DATA)}
-            desiredYear={desiredYear}
-            desiredMonth={desiredMonth}
-          />
-        }
-        
-        { !showFollowUpTable &&
-          <AnalysisChart 
-            data={data} 
-            desiredYear={desiredYear} 
-            desiredMonth={desiredMonth} 
-            threeMonthData={threeMonthData}
-            getTimeOfDay={getTimeOfDay}
-            />
-        }
+      {showReports ? (
+        <BehavioursReports 
+          name={name}
+          altName={altName}
+          data={data}
+          getTimeOfDay={getTimeOfDay}
+        />
+      ) : (
+        <React.Fragment key="main-content">
+          <div className={styles['chart-container']}>
+            {/* {analysisChartData.datasets.length > 0 && <Bar data={analysisChartData} options={analysisChartOptions} />} */}
+            {showFollowUpTable &&
+              <FollowUpChart
+                data={(followUpData.length > 0 ? filteredFollowUpData : DUMMY_FOLLOW_UP_DATA)}
+                desiredYear={desiredYear}
+                desiredMonth={desiredMonth}
+              />
+            }
+            
+            { !showFollowUpTable &&
+              <AnalysisChart 
+                data={data} 
+                desiredYear={desiredYear} 
+                desiredMonth={desiredMonth}
+                threeMonthData={threeMonthData}
+                getTimeOfDay={getTimeOfDay}
+                />
+            }
 
         <div className={styles.chart}>
           <div className={styles['gauge-container']}>
@@ -1256,7 +1333,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                     fontSize: '24px',
                     fontWeight: 'bold'
                   }}>
-                    15%
+                    {overviewMetrics.antipsychotics.percentage}%
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0D0E10', marginBottom: '5px' }}>
@@ -1267,13 +1344,15 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                     </p>
                     {showResidentNames && (
                       <div style={{ marginTop: '10px', fontSize: '18px', color: '#676879' }}>
-                        <strong>Residents:</strong> John Smith, Mary Johnson, Robert Davis
+                        <strong>Residents:</strong> {overviewMetrics.antipsychotics.residents.join(', ')}
                       </div>
                     )}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>-3%</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>
+                    {overviewMetrics.antipsychotics.change > 0 ? '+' : ''}{overviewMetrics.antipsychotics.change}%
+                  </div>
                   <div style={{ fontSize: '12px', color: '#676879' }}>vs last month</div>
                 </div>
               </div>
@@ -1303,7 +1382,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                     fontSize: '24px',
                     fontWeight: 'bold'
                   }}>
-                    28%
+                    {overviewMetrics.worsened.percentage}%
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0D0E10', marginBottom: '5px' }}>
@@ -1314,13 +1393,15 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                     </p>
                     {showResidentNames && (
                       <div style={{ marginTop: '10px', fontSize: '18px', color: '#676879' }}>
-                        <strong>Residents:</strong> Sarah Wilson, Michael Brown, Lisa Anderson
+                        <strong>Residents:</strong> {overviewMetrics.worsened.residents.join(', ')}
                       </div>
                     )}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>+5%</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>
+                    {overviewMetrics.worsened.change > 0 ? '+' : ''}{overviewMetrics.worsened.change}%
+                  </div>
                   <div style={{ fontSize: '12px', color: '#676879' }}>vs last month</div>
                 </div>
               </div>
@@ -1350,7 +1431,7 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                     fontSize: '24px',
                     fontWeight: 'bold'
                   }}>
-                    57%
+                    {overviewMetrics.improved.percentage}%
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0D0E10', marginBottom: '5px' }}>
@@ -1361,13 +1442,15 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                     </p>
                     {showResidentNames && (
                       <div style={{ marginTop: '10px', fontSize: '18px', color: '#676879' }}>
-                        <strong>Residents:</strong> David Miller, Jennifer Taylor, Thomas White
+                        <strong>Residents:</strong> {overviewMetrics.improved.residents.join(', ')}
                       </div>
                     )}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>+8%</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#06b6d4' }}>
+                    {overviewMetrics.improved.change > 0 ? '+' : ''}{overviewMetrics.improved.change}%
+                  </div>
                   <div style={{ fontSize: '12px', color: '#676879' }}>vs last month</div>
                 </div>
               </div>
@@ -1385,9 +1468,9 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
       
       <div className={styles['table-header']}>
         <div className={styles['header']}>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginLeft: '10px' }}>
         {!showFollowUpTable ? (
-          <>
+          <React.Fragment key="behaviours-filters">
             {/* Behavior Tracking Filters */}
             <select className={styles.selector}value={filterResident} onChange={(e) => setFilterResident(e.target.value)}>
                 <option>Any Resident</option>
@@ -1411,11 +1494,16 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
                 <option>Evening</option>
                 <option>Night</option>
               </select>
-          </>
+          </React.Fragment>
         ) : (
-          <>
-            {/* Follow-up Filters */}
-            <select className={styles.selector} value={filterFollowUpResident} onChange={(e) => setFilterFollowUpResident(e.target.value)}>
+          <React.Fragment key="followup-filters">
+            {/* Follow-up Filters - Aligned horizontally */}
+            <select 
+              className={styles.selector} 
+              value={filterFollowUpResident} 
+              onChange={(e) => setFilterFollowUpResident(e.target.value)}
+              style={{ padding: '8px 32px 8px 12px', height: '36px' }}
+            >
               <option>Any Resident</option>
               {[...new Set(followUpData.map((d) => d.resident_name))].map((name) => (
                 <option key={name}>{name}</option>
@@ -1428,8 +1516,8 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
               className={styles.selector}
               value={filterStartDate}
               onChange={(e) => setFilterStartDate(e.target.value)}
-              placeholder="Start Date"
-              style={{ padding: '8px' }}
+              placeholder="yyyy-mm-dd"
+              style={{ padding: '8px 12px', height: '36px' }}
             />
 
             {/* End Date Filter */}
@@ -1438,29 +1526,10 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
               className={styles.selector}
               value={filterEndDate}
               onChange={(e) => setFilterEndDate(e.target.value)}
-              placeholder="End Date"
-              style={{ padding: '8px' }}
+              placeholder="yyyy-mm-dd"
+              style={{ padding: '8px 12px', height: '36px' }}
             />
-
-            {/* Clear Date Filters Button */}
-            <button
-              onClick={() => {
-                setFilterStartDate("");
-                setFilterEndDate("");
-              }}
-              style={{
-                padding: '8px 12px',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Clear Dates
-            </button>
-          </>
+          </React.Fragment>
         )}
           </div>
         </div>
@@ -1468,7 +1537,15 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
           <button className={styles['download-button']} onClick={handleSaveCSV}>
             Download as CSV
           </button>
-          <button className={styles['download-button']} onClick={handleSavePDF}>
+          <button 
+            className={styles['download-button']} 
+            onClick={handleSavePDF}
+            style={{
+              background: '#ffffff',
+              border: '2px solid #06b6d4',
+              color: '#06b6d4'
+            }}
+          >
             Download as PDF
           </button>
         </div>
@@ -1489,6 +1566,8 @@ const [filterTimeOfDay, setFilterTimeOfDay] = useState("Anytime");
           />
         )}
       </div>
+        </React.Fragment>
+      )}
       {isModalOpen && (
         <div className={styles.modal}>
           <div className={styles.modalContent}>

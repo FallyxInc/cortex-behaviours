@@ -10,6 +10,19 @@ export default function FileUpload() {
   const [loading, setLoading] = useState(false);
   const [loadingHomes, setLoadingHomes] = useState(true);
   const [message, setMessage] = useState('');
+  
+  // Overview metrics state
+  const [antipsychoticsPercentage, setAntipsychoticsPercentage] = useState('');
+  const [antipsychoticsChange, setAntipsychoticsChange] = useState('');
+  const [antipsychoticsResidents, setAntipsychoticsResidents] = useState('');
+  
+  const [worsenedPercentage, setWorsenedPercentage] = useState('');
+  const [worsenedChange, setWorsenedChange] = useState('');
+  const [worsenedResidents, setWorsenedResidents] = useState('');
+  
+  const [improvedPercentage, setImprovedPercentage] = useState('');
+  const [improvedChange, setImprovedChange] = useState('');
+  const [improvedResidents, setImprovedResidents] = useState('');
 
   useEffect(() => {
     const fetchHomes = async () => {
@@ -63,11 +76,23 @@ export default function FileUpload() {
     setLoading(true);
     setMessage('');
 
-    if (pdfFiles.length === 0 || excelFiles.length === 0 || !selectedHome) {
-      setMessage('Please select at least one PDF file, one Excel file, and a home');
+    // Files are optional - only require home selection
+    if (!selectedHome) {
+      setMessage('Please select a home');
       setLoading(false);
       return;
     }
+
+    // If files are provided, both PDF and Excel are required
+    // If no files, metrics are optional (will keep most recent value if nothing provided)
+    if (pdfFiles.length > 0 || excelFiles.length > 0) {
+      if (pdfFiles.length === 0 || excelFiles.length === 0) {
+        setMessage('Please select both PDF and Excel files, or provide only overview metrics');
+        setLoading(false);
+        return;
+      }
+    }
+    // If no files and no metrics, that's okay - will just keep existing values
 
     try {
       const formData = new FormData();
@@ -83,6 +108,23 @@ export default function FileUpload() {
       formData.append('home', selectedHome);
       formData.append('pdfCount', pdfFiles.length.toString());
       formData.append('excelCount', excelFiles.length.toString());
+      
+      // Add overview metrics if provided
+      if (antipsychoticsPercentage) {
+        formData.append('antipsychoticsPercentage', antipsychoticsPercentage);
+        formData.append('antipsychoticsChange', antipsychoticsChange || '0');
+        formData.append('antipsychoticsResidents', antipsychoticsResidents || '');
+      }
+      if (worsenedPercentage) {
+        formData.append('worsenedPercentage', worsenedPercentage);
+        formData.append('worsenedChange', worsenedChange || '0');
+        formData.append('worsenedResidents', worsenedResidents || '');
+      }
+      if (improvedPercentage) {
+        formData.append('improvedPercentage', improvedPercentage);
+        formData.append('improvedChange', improvedChange || '0');
+        formData.append('improvedResidents', improvedResidents || '');
+      }
 
       const response = await fetch('/api/admin/process-behaviours', {
         method: 'POST',
@@ -92,10 +134,19 @@ export default function FileUpload() {
       const result = await response.json();
 
       if (response.ok) {
-        setMessage('Files processed successfully!');
+        setMessage('Files and metrics processed successfully!');
         setPdfFiles([]);
         setExcelFiles([]);
         setSelectedHome('');
+        setAntipsychoticsPercentage('');
+        setAntipsychoticsChange('');
+        setAntipsychoticsResidents('');
+        setWorsenedPercentage('');
+        setWorsenedChange('');
+        setWorsenedResidents('');
+        setImprovedPercentage('');
+        setImprovedChange('');
+        setImprovedResidents('');
         const pdfInput = document.getElementById('pdf') as HTMLInputElement;
         const excelInput = document.getElementById('excel') as HTMLInputElement;
         if (pdfInput) pdfInput.value = '';
@@ -228,6 +279,152 @@ export default function FileUpload() {
             )}
           </div>
 
+          <div className="border-t border-gray-200 pt-6 mt-6">
+            <h4 className="text-base font-medium text-gray-900 mb-4">
+              Overview Metrics (Optional)
+            </h4>
+            <p className="text-sm text-gray-500 mb-4">
+              Enter overview metrics for the behaviours dashboard. If no files are uploaded, these metrics will be saved. If files are uploaded, metrics are optional.
+            </p>
+            
+            <div className="space-y-6">
+              {/* Antipsychotics Section */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h5 className="text-sm font-medium text-gray-700 mb-3">
+                  % of Residents with Potentially Inappropriate Use of Antipsychotics
+                </h5>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Percentage Value
+                    </label>
+                    <input
+                      type="number"
+                      value={antipsychoticsPercentage}
+                      onChange={(e) => setAntipsychoticsPercentage(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                      placeholder="e.g., 15"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Change (+ or -)
+                    </label>
+                    <input
+                      type="number"
+                      value={antipsychoticsChange}
+                      onChange={(e) => setAntipsychoticsChange(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                      placeholder="e.g., -3"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Resident Names (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={antipsychoticsResidents}
+                    onChange={(e) => setAntipsychoticsResidents(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                    placeholder="e.g., John Smith, Mary Johnson"
+                  />
+                </div>
+              </div>
+
+              {/* Worsened Section */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h5 className="text-sm font-medium text-gray-700 mb-3">
+                  % of Behaviours Worsened
+                </h5>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Percentage Value
+                    </label>
+                    <input
+                      type="number"
+                      value={worsenedPercentage}
+                      onChange={(e) => setWorsenedPercentage(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                      placeholder="e.g., 28"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Change (+ or -)
+                    </label>
+                    <input
+                      type="number"
+                      value={worsenedChange}
+                      onChange={(e) => setWorsenedChange(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                      placeholder="e.g., 5"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Resident Names (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={worsenedResidents}
+                    onChange={(e) => setWorsenedResidents(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                    placeholder="e.g., Sarah Wilson, Michael Brown"
+                  />
+                </div>
+              </div>
+
+              {/* Improved Section */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h5 className="text-sm font-medium text-gray-700 mb-3">
+                  % of Behaviours Improved
+                </h5>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Percentage Value
+                    </label>
+                    <input
+                      type="number"
+                      value={improvedPercentage}
+                      onChange={(e) => setImprovedPercentage(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                      placeholder="e.g., 57"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Change (+ or -)
+                    </label>
+                    <input
+                      type="number"
+                      value={improvedChange}
+                      onChange={(e) => setImprovedChange(e.target.value)}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                      placeholder="e.g., 8"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Resident Names (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={improvedResidents}
+                    onChange={(e) => setImprovedResidents(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm"
+                    placeholder="e.g., David Miller, Jennifer Taylor"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label htmlFor="home" className="block text-sm font-medium text-gray-700">
               Select Home
@@ -271,7 +468,7 @@ export default function FileUpload() {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={loading || loadingHomes || pdfFiles.length === 0 || excelFiles.length === 0 || !selectedHome}
+              disabled={loading || loadingHomes || !selectedHome}
               className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
               style={{ backgroundColor: '#0cc7ed' }}
               onMouseEnter={(e) => {

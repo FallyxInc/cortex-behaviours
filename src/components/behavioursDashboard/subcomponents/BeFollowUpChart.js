@@ -147,7 +147,7 @@ const FollowUpChart = ({data, desiredYear, desiredMonth}) => {
                     }
                 },
                 grid: {
-                    color: 'rgba(0, 0, 0, 0.1)',
+                    display: false,
                 }
             },
         },
@@ -178,7 +178,7 @@ const FollowUpChart = ({data, desiredYear, desiredMonth}) => {
                 }}
                 style={{ 
                     fontSize: '11px', 
-                    padding: '4px 2px',
+                    padding: '4px 32px 4px 2px', // Ensure right padding for dropdown icon
                     height: 'auto'
                 }}
             >

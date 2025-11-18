@@ -13,6 +13,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      {/* Inter variable font is loaded via @import in globals.css with full weight range (100-900) */}
+      {/* Next.js automatically handles preconnect optimization for Google Fonts */}
       <body>{children}</body>
     </html>
   );
