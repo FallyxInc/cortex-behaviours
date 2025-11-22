@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import HelpIcon from './HelpIcon';
 
 interface User {
   id: string;
@@ -307,12 +308,24 @@ export default function UserManagement() {
   function userCreateForm() {
     return (
       <div className="bg-white shadow rounded-lg p-6 border border-gray-200">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Add New User</h4>
+        <div className="flex items-center mb-4">
+          <h4 className="text-lg font-medium text-gray-900">Add New User</h4>
+          <HelpIcon 
+            title="Add New User"
+            content="Create a new user account. The username will be used to generate an email address (username@example.com). Passwords must be at least 6 characters long. Home users must be assigned to a chain and home."
+          />
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username
-            </label>
+            <div className="flex items-center">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                Username
+              </label>
+              <HelpIcon 
+                title="Username"
+                content="The username for the account. This will be used to generate the email address: username@example.com"
+              />
+            </div>
             <input
               type="text"
               id="username"
@@ -328,9 +341,15 @@ export default function UserManagement() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
+            <div className="flex items-center">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <HelpIcon 
+                title="Password"
+                content="Password must be at least 6 characters long. Choose a secure password for the user account."
+              />
+            </div>
             <input
               type="password"
               id="password"
@@ -349,9 +368,17 @@ export default function UserManagement() {
           </div>
 
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-              Role
-            </label>
+            <div className="flex items-center">
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                Role
+              </label>
+              <HelpIcon 
+                title="User Role"
+                content="• Admin: Full access to admin dashboard (home management, user management, file uploads)
+
+• Home User: Access only to their assigned home's dashboard to view behavioural data"
+              />
+            </div>
             <select
               id="role"
               value={formData.role}
@@ -381,9 +408,15 @@ export default function UserManagement() {
             <>
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Chain
-                  </label>
+                  <div className="flex items-center">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Chain
+                    </label>
+                    <HelpIcon 
+                      title="Chain"
+                      content="Select an existing chain or create a new one. Chains group related care facilities together. If creating a new chain, you must also create a home for that chain."
+                    />
+                  </div>
                   <div className="flex items-center space-x-2">
                     <button
                       type="button"
@@ -448,9 +481,15 @@ export default function UserManagement() {
               {!formData.createNewChain && formData.chainId && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Home
-                    </label>
+                    <div className="flex items-center">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Home
+                      </label>
+                      <HelpIcon 
+                        title="Home"
+                        content="Select an existing home from the selected chain, or create a new home. The home is the specific care facility the user will have access to."
+                      />
+                    </div>
                     <div className="flex items-center space-x-2">
                       <button
                         type="button"
@@ -562,7 +601,19 @@ export default function UserManagement() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-gray-900">User Management</h3>
+        <div className="flex items-center">
+          <h3 className="text-xl font-semibold text-gray-900">User Management</h3>
+          <HelpIcon 
+            title="User Management"
+            content="Manage users and their access to the system.
+
+• Admin Users: Have full access to the admin dashboard, including home management, user management, and file uploads.
+
+• Home Users: Have access only to their assigned home's dashboard. They can view behavioural data for their specific care facility.
+
+Users are automatically assigned email addresses based on their username (username@example.com). Each home user must be associated with a chain and home."
+          />
+        </div>
         <button
           onClick={() => setShowForm(true)}
           className="text-white px-4 py-2 rounded-md text-sm font-medium transition-all hover:shadow-lg"
@@ -597,7 +648,19 @@ export default function UserManagement() {
 
       <div className="bg-white shadow overflow-hidden rounded-lg border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">All Users</h3>
+          <div className="flex items-center">
+            <h3 className="text-lg font-medium text-gray-900">All Users</h3>
+            <HelpIcon 
+              title="All Users"
+              content="View and manage all users in the system. You can:
+
+• Change user roles (admin/homeUser)
+• Reassign homes and chains for home users
+• Delete users
+
+Note: When you change a home user's home, their chain will automatically update to match the home's chain."
+            />
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import HelpIcon from './HelpIcon';
 
 export default function FileUpload() {
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
@@ -166,15 +167,38 @@ export default function FileUpload() {
   return (
     <div className="bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:p-6">
-        <h3 className="text-base leading-6 font-medium text-gray-900 mb-6">
-          Upload Behaviour Files
-        </h3>
+        <div className="flex items-center mb-6">
+          <h3 className="text-base leading-6 font-medium text-gray-900">
+            Upload Behaviour Files
+          </h3>
+          <HelpIcon 
+            title="Upload Behaviour Files"
+            content="Upload and process behavioural data files for homes.
+
+• PDF Files: Behaviour notes in PDF format. Upload one or more PDF files.
+
+• Excel Files: Incident reports in Excel format (.xls or .xlsx). Must upload the same number of Excel files as PDF files.
+
+• Overview Metrics: Optional metrics that can be entered manually or will be extracted from files. These include:
+  - % of Residents with Potentially Inappropriate Use of Antipsychotics
+  - % of Behaviours Worsened
+  - % of Behaviours Improved
+
+You can upload files only, enter metrics only, or do both. If no files are uploaded, only metrics will be saved."
+          />
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="pdf" className="block text-sm font-medium text-gray-700">
-              Behaviour Notes PDF
-            </label>
+            <div className="flex items-center">
+              <label htmlFor="pdf" className="block text-sm font-medium text-gray-700">
+                Behaviour Notes PDF
+              </label>
+              <HelpIcon 
+                title="Behaviour Notes PDF"
+                content="Upload PDF files containing behaviour notes. You can upload multiple PDF files. The system will process these files to extract behavioural data."
+              />
+            </div>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
                 <svg
@@ -227,9 +251,15 @@ export default function FileUpload() {
           </div>
 
           <div>
-            <label htmlFor="excel" className="block text-sm font-medium text-gray-700">
-              Incident Report Excel
-            </label>
+            <div className="flex items-center">
+              <label htmlFor="excel" className="block text-sm font-medium text-gray-700">
+                Incident Report Excel
+              </label>
+              <HelpIcon 
+                title="Incident Report Excel"
+                content="Upload Excel files (.xls or .xlsx) containing incident reports. You must upload the same number of Excel files as PDF files. The system will process these files to extract incident data."
+              />
+            </div>
             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
               <div className="space-y-1 text-center">
                 <svg
@@ -282,9 +312,21 @@ export default function FileUpload() {
           </div>
 
           <div className="border-t border-gray-200 pt-6 mt-6">
-            <h4 className="text-base font-medium text-gray-900 mb-4">
-              Overview Metrics (Optional)
-            </h4>
+            <div className="flex items-center mb-4">
+              <h4 className="text-base font-medium text-gray-900">
+                Overview Metrics (Optional)
+              </h4>
+              <HelpIcon 
+                title="Overview Metrics"
+                content="Enter high-level metrics for the behaviours dashboard. These metrics can be entered manually or will be extracted from uploaded files.
+
+• Percentage Value: The main percentage metric
+• Change (+ or -): The change from the previous period
+• Resident Names: Comma-separated list of residents associated with this metric
+
+If no files are uploaded, these metrics will be saved directly. If files are uploaded, metrics are optional and will supplement the file data."
+              />
+            </div>
             <p className="text-sm text-gray-500 mb-4">
               Enter overview metrics for the behaviours dashboard. If no files are uploaded, these metrics will be saved. If files are uploaded, metrics are optional.
             </p>
@@ -292,9 +334,15 @@ export default function FileUpload() {
             <div className="space-y-6">
               {/* Antipsychotics Section */}
               <div className="border border-gray-200 rounded-lg p-4">
-                <h5 className="text-sm font-medium text-gray-700 mb-3">
-                  % of Residents with Potentially Inappropriate Use of Antipsychotics
-                </h5>
+                <div className="flex items-center mb-3">
+                  <h5 className="text-sm font-medium text-gray-700">
+                    % of Residents with Potentially Inappropriate Use of Antipsychotics
+                  </h5>
+                  <HelpIcon 
+                    title="Antipsychotics Metric"
+                    content="Track the percentage of residents who have potentially inappropriate use of antipsychotics. Enter the percentage value, change from previous period, and list of affected residents."
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -337,9 +385,15 @@ export default function FileUpload() {
 
               {/* Worsened Section */}
               <div className="border border-gray-200 rounded-lg p-4">
-                <h5 className="text-sm font-medium text-gray-700 mb-3">
-                  % of Behaviours Worsened
-                </h5>
+                <div className="flex items-center mb-3">
+                  <h5 className="text-sm font-medium text-gray-700">
+                    % of Behaviours Worsened
+                  </h5>
+                  <HelpIcon 
+                    title="Behaviours Worsened"
+                    content="Track the percentage of behaviours that have worsened. Enter the percentage value, change from previous period, and list of residents whose behaviours worsened."
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -382,9 +436,15 @@ export default function FileUpload() {
 
               {/* Improved Section */}
               <div className="border border-gray-200 rounded-lg p-4">
-                <h5 className="text-sm font-medium text-gray-700 mb-3">
-                  % of Behaviours Improved
-                </h5>
+                <div className="flex items-center mb-3">
+                  <h5 className="text-sm font-medium text-gray-700">
+                    % of Behaviours Improved
+                  </h5>
+                  <HelpIcon 
+                    title="Behaviours Improved"
+                    content="Track the percentage of behaviours that have improved. Enter the percentage value, change from previous period, and list of residents whose behaviours improved."
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -428,9 +488,15 @@ export default function FileUpload() {
           </div>
 
           <div>
-            <label htmlFor="home" className="block text-sm font-medium text-gray-700">
-              Select Home
-            </label>
+            <div className="flex items-center">
+              <label htmlFor="home" className="block text-sm font-medium text-gray-700">
+                Select Home
+              </label>
+              <HelpIcon 
+                title="Select Home"
+                content="Select the home (care facility) that these files and metrics belong to. The data will be associated with this home in the dashboard."
+              />
+            </div>
             <select
               id="home"
               name="home"

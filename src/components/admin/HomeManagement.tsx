@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import HelpIcon from './HelpIcon';
 
 interface Home {
   id: string;
@@ -178,18 +179,30 @@ export default function HomeManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
+      <div>
+        <div className="flex items-center">
           <h3 className="text-xl font-semibold text-gray-900">Home Management</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            View and manage behaviour-enabled homes. Use "Seed Existing Homes" to populate Berkshire Care, Mill Creek Care, and other existing homes with their chain associations.
-          </p>
+          <HelpIcon 
+            title="Home Management"
+            content="Manage behaviour-enabled homes in the system. Homes are care facilities that track behavioural data for residents.
+
+• Seed Existing Homes: Automatically creates/updates existing homes (like Berkshire Care, Mill Creek Care) and their chain associations (Kindera, Responsive). Use this when setting up the system for the first time.
+
+• Create Home: Manually create a new home with its associated chain. The home name will be used to create Firebase structure and Python processing directories.
+
+• Refresh: Reload the list of homes from the database.
+
+Each home must belong to a chain, which groups related care facilities together."
+          />
         </div>
-        <div className="flex gap-3">
+        <p className="mt-2 text-sm text-gray-600">
+          View and manage behaviour-enabled homes. Use "Seed Existing Homes" to populate Berkshire Care, Mill Creek Care, and other existing homes with their chain associations.
+        </p>
+        <div className="mt-4 flex gap-3">
           <button
             onClick={handleMigrate}
             disabled={migrating}
-            className="text-white px-4 py-2 rounded-md text-sm font-medium transition-all hover:shadow-lg disabled:opacity-50"
+            className="text-white px-6 py-1 rounded-md text-sm font-medium transition-all hover:shadow-lg disabled:opacity-50 text-left min-w-[160px]"
             style={{ 
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
             }}
@@ -210,7 +223,7 @@ export default function HomeManagement() {
           </button>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="text-white px-4 py-2 rounded-md text-sm font-medium transition-all hover:shadow-lg"
+            className="text-white px-6 py-1 rounded-md text-sm font-medium transition-all hover:shadow-lg text-left min-w-[120px]"
             style={{ 
               background: 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)',
             }}
@@ -227,7 +240,7 @@ export default function HomeManagement() {
           </button>
           <button
             onClick={fetchHomes}
-            className="text-white px-4 py-2 rounded-md text-sm font-medium transition-all hover:shadow-lg"
+            className="text-white px-6 py-1 rounded-md text-sm font-medium transition-all hover:shadow-lg text-left min-w-[100px]"
             style={{ 
               background: 'linear-gradient(135deg, #06b6d4 0%, #0cc7ed 100%)',
               boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)'
@@ -262,12 +275,30 @@ export default function HomeManagement() {
 
       {showCreateForm && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Create New Home</h4>
+          <div className="flex items-center mb-4">
+            <h4 className="text-lg font-semibold text-gray-900">Create New Home</h4>
+            <HelpIcon 
+              title="Create New Home"
+              content="Create a new behaviour-enabled home in the system. This will:
+
+• Create a Firebase database structure for the home
+• Generate a Python processing directory (or use custom name)
+• Associate the home with a chain
+
+The home name should match the actual care facility name (e.g., 'Mill Creek Care'). The Python directory name is auto-generated from the home name but can be customized."
+            />
+          </div>
           <form onSubmit={handleCreateHome} className="space-y-4">
             <div>
-              <label htmlFor="homeName" className="block text-sm font-medium text-gray-700 mb-2">
-                Home Name
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="homeName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Home Name
+                </label>
+                <HelpIcon 
+                  title="Home Name"
+                  content="Enter the display name of the care facility. This name will appear in the dashboard and throughout the system. Example: 'Mill Creek Care', 'Berkshire Care'"
+                />
+              </div>
               <input
                 type="text"
                 id="homeName"
@@ -282,9 +313,17 @@ export default function HomeManagement() {
               </p>
             </div>
             <div>
-              <label htmlFor="pythonDir" className="block text-sm font-medium text-gray-700 mb-2">
-                Python Directory Name <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="pythonDir" className="block text-sm font-medium text-gray-700 mb-2">
+                  Python Directory Name <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <HelpIcon 
+                  title="Python Directory Name"
+                  content="The directory name in the python/ folder where processing scripts will be stored. If left blank, it will be auto-generated from the home name by converting to lowercase and removing spaces/underscores.
+
+Example: 'Mill Creek Care' → 'millcreek' (auto) or specify custom like 'millcreekcare'"
+                />
+              </div>
               <input
                 type="text"
                 id="pythonDir"
@@ -301,9 +340,15 @@ export default function HomeManagement() {
               </p>
             </div>
             <div>
-              <label htmlFor="chainId" className="block text-sm font-medium text-gray-700 mb-2">
-                Chain
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="chainId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Chain
+                </label>
+                <HelpIcon 
+                  title="Chain"
+                  content="Select the chain this home belongs to. Chains group related care facilities together (e.g., 'Kindera', 'Responsive'). Each home must be associated with a chain."
+                />
+              </div>
               <select
                 id="chainId"
                 value={selectedChainId}
