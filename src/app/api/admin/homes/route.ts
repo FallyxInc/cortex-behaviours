@@ -23,9 +23,11 @@ export async function GET() {
 
       const homeData = data[key];
       if (homeData && typeof homeData === 'object' && 'behaviours' in homeData) {
+        // Use displayName from mapping if available, otherwise use the key
+        const displayName = homeData.mapping?.displayName || key;
         homes.push({
           id: key,
-          name: key,
+          name: displayName,
           chainId: homeData.chainId || null
         });
       }
@@ -172,6 +174,100 @@ export async function POST(request: NextRequest) {
     console.error('Error creating home:', error);
     return NextResponse.json(
       { error: 'Failed to create home', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { homeId } = await request.json();
+    
+    if (!homeId) {
+      return NextResponse.json(
+        { error: 'Home ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if home exists
+    const homeRef = adminDb.ref(`/${homeId}`);
+    const homeSnapshot = await homeRef.once('value');
+    
+    if (!homeSnapshot.exists()) {
+      return NextResponse.json(
+        { error: 'Home not found' },
+        { status: 404 }
+      );
+    }
+
+    const homeData = homeSnapshot.val();
+    const chainId = homeData?.chainId;
+
+    // Check if there are users assigned to this home
+    const usersRef = adminDb.ref('/users');
+    const usersSnapshot = await usersRef.once('value');
+    
+    if (usersSnapshot.exists()) {
+      const users = usersSnapshot.val();
+      const usersWithHome = Object.keys(users).filter(
+        userId => users[userId]?.homeId === homeId
+      );
+      
+      if (usersWithHome.length > 0) {
+        return NextResponse.json(
+          { error: `Cannot delete home: ${usersWithHome.length} user(s) are assigned to this home. Please reassign or delete users first.` },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Remove home from chain's homes list if chain exists
+    if (chainId) {
+      const chainRef = adminDb.ref(`/chains/${chainId}`);
+      const chainSnapshot = await chainRef.once('value');
+      
+      if (chainSnapshot.exists()) {
+        const chainData = chainSnapshot.val();
+        const homes = chainData.homes || [];
+        const updatedHomes = homes.filter((h: string) => h !== homeId);
+        await chainRef.update({ homes: updatedHomes });
+      }
+    }
+
+    // Remove from homeMappings
+    const mappingsRef = adminDb.ref('/homeMappings');
+    const mappingsSnapshot = await mappingsRef.once('value');
+    
+    if (mappingsSnapshot.exists()) {
+      const mappings = mappingsSnapshot.val();
+      const updatedMappings = { ...mappings };
+      
+      // Remove all entries for this home (by homeId and firebaseId)
+      Object.keys(updatedMappings).forEach(key => {
+        const mapping = updatedMappings[key];
+        if (mapping?.homeName === homeId || mapping?.firebaseId === homeId) {
+          delete updatedMappings[key];
+        }
+      });
+      
+      await mappingsRef.set(updatedMappings);
+    }
+
+    // Delete the home
+    await homeRef.remove();
+
+    console.log(`✅ Deleted home: ${homeId}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Home deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting home:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete home', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

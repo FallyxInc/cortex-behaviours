@@ -9,7 +9,7 @@ import '@/styles/Login.css';
 import Link from 'next/link';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,10 +18,13 @@ export default function Login() {
   const handleLogin = async (event?: React.FormEvent) => {
     if (event) event.preventDefault();
 
-    const fakeEmail = `${username}@example.com`;
+    if (!email || !password) {
+      setErrorMessage('Please enter both email and password');
+      return;
+    }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, fakeEmail, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const userId = userCredential.user.uid;
       const userSnapshot = await get(ref(db, `users/${userCredential.user.uid}`));
 
@@ -69,13 +72,13 @@ export default function Login() {
         <h2 className="login-title">Behaviours Dashboard Login</h2>
 
       <div className="login-input-group">
-        <label htmlFor="login-email">Username</label>
+        <label htmlFor="login-email">Email</label>
         <input
           id="login-email"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Enter your username"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               document.getElementById('login-password')?.focus();

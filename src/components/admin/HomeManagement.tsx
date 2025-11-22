@@ -232,6 +232,38 @@ export default function TenantManagement() {
     }
   };
 
+  const handleDelete = async (homeId: string, homeName: string) => {
+    if (!confirm(`Are you sure you want to delete "${homeName}"? This will permanently delete all data associated with this home. This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setError('');
+      setSuccessMessage('');
+
+      const response = await fetch('/api/admin/homes', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ homeId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSuccessMessage(`Home "${homeName}" deleted successfully!`);
+        fetchHomes();
+        fetchChains();
+      } else {
+        setError(data.error || 'Failed to delete home');
+      }
+    } catch (err) {
+      console.error('Error deleting home:', err);
+      setError('Failed to delete home');
+    }
+  };
+
   if (loading && homes.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -620,12 +652,15 @@ The home name should match the actual care facility name (e.g., 'Mill Creek Care
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Home Name
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {homes.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
                       No behaviour-enabled homes found
                     </td>
                   </tr>
@@ -637,6 +672,14 @@ The home name should match the actual care facility name (e.g., 'Mill Creek Care
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {home.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleDelete(home.id, home.name)}
+                          className="text-red-600 hover:text-red-900 transition-colors"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))

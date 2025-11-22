@@ -6,7 +6,7 @@ import { auth } from '@/lib/firebase';
 import styles from '@/styles/UpdatePasswordPage.module.css';
 
 export default function UpdatePasswordPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -21,15 +21,18 @@ export default function UpdatePasswordPage() {
     setError(null);
     setMessage(null);
 
+    if (!email || !currentPassword || !newPassword) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
     if (newPassword !== confirmNewPassword) {
       setError('New passwords do not match.');
       return;
     }
 
-    const fakeEmail = `${username}@example.com`;
-
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, fakeEmail, currentPassword);
+      const userCredential = await signInWithEmailAndPassword(auth, email, currentPassword);
       const user = userCredential.user;
 
       await updatePassword(user, newPassword);
@@ -61,12 +64,12 @@ export default function UpdatePasswordPage() {
       {message && <p className={styles.successMessage}>{message}</p>}
       <form onSubmit={handleUpdatePassword} className={styles.updatePasswordForm}>
         <div className={styles.inputGroup}>
-          <label>Username:</label>
+          <label>Email:</label>
           <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your username"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
           />
         </div>
         <div className={styles.inputGroup}>

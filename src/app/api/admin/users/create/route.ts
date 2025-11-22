@@ -4,11 +4,20 @@ import { adminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password, role, homeId, chainId, createNewHome, newHomeName } = await request.json();
+    const { username, email, password, role, homeId, chainId, createNewHome, newHomeName } = await request.json();
 
-    if (!username || !password || !role) {
+    if (!username || !email || !password || !role) {
       return NextResponse.json(
-        { error: 'Username, password, and role are required' },
+        { error: 'Username, email, password, and role are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
         { status: 400 }
       );
     }
@@ -100,16 +109,17 @@ export async function POST(request: NextRequest) {
       finalHomeId = sanitizedHomeName;
     }
 
-    const email = `${username}@example.com`;
     const auth = getAuth();
 
     const userRecord = await auth.createUser({
       email,
       password,
-      displayName: username
+      displayName: username,
+      emailVerified: false // Disable email verification
     });
 
     const userData: any = {
+      username,
       role,
       loginCount: 0,
       createdAt: new Date().toISOString()

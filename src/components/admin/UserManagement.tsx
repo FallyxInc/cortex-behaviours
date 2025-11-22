@@ -34,16 +34,18 @@ export default function UserManagement() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
+    email: '',
     password: '',
     role: 'homeUser',
     chainId: '',
-    homeId: '',
-    createNewHome: false,
-    newHomeName: ''
+    homeId: ''
   });
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingUsername, setEditingUsername] = useState('');
+  const [editingEmail, setEditingEmail] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -130,18 +132,10 @@ export default function UserManagement() {
           setIsSubmitting(false);
           return;
         }
-        if (formData.createNewHome) {
-          if (!formData.newHomeName.trim()) {
-            showMessage('Home name is required when creating a new home', 'error');
-            setIsSubmitting(false);
-            return;
-          }
-        } else {
-          if (!formData.homeId) {
-            showMessage('Please select or create a home', 'error');
-            setIsSubmitting(false);
-            return;
-          }
+        if (!formData.homeId) {
+          showMessage('Please select a home', 'error');
+          setIsSubmitting(false);
+          return;
         }
       }
 
@@ -159,12 +153,11 @@ export default function UserManagement() {
         showMessage('User created successfully!', 'success');
         setFormData({
           username: '',
+          email: '',
           password: '',
           role: 'homeUser',
           chainId: '',
-          homeId: '',
-          createNewHome: false,
-          newHomeName: ''
+          homeId: ''
         });
         setShowForm(false);
         fetchUsers();
@@ -257,6 +250,65 @@ export default function UserManagement() {
     }
   };
 
+  const handleStartEdit = (user: User) => {
+    setEditingUserId(user.id);
+    setEditingUsername(user.username || '');
+    setEditingEmail(user.email || '');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUserId(null);
+    setEditingUsername('');
+    setEditingEmail('');
+  };
+
+  const handleSaveEdit = async (userId: string) => {
+    if (!editingUsername.trim()) {
+      showMessage('Username is required', 'error');
+      return;
+    }
+
+    if (!editingEmail.trim()) {
+      showMessage('Email is required', 'error');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editingEmail)) {
+      showMessage('Invalid email format', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: editingUsername.trim(),
+          email: editingEmail.trim()
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showMessage('User profile updated successfully!', 'success');
+        setEditingUserId(null);
+        setEditingUsername('');
+        setEditingEmail('');
+        fetchUsers();
+      } else {
+        showMessage(data.error || 'Failed to update user profile', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      showMessage('Failed to update user profile', 'error');
+    }
+  };
+
   // Get homes for selected chain
   const getHomesForChain = (chainId: string) => {
     if (!chainId) return [];
@@ -304,10 +356,10 @@ export default function UserManagement() {
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
               </label>
-              <HelpIcon 
-                title="Username"
-                content="The username for the account. This will be used to generate the email address: username@example.com"
-              />
+          <HelpIcon 
+            title="Username"
+            content="The username for the account. This is a display name and will be stored separately from the email address."
+          />
             </div>
             <input
               type="text"
@@ -318,9 +370,27 @@ export default function UserManagement() {
               placeholder="Enter username"
               required
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Email will be: {formData.username || 'username'}@example.com
-            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email
+              </label>
+              <HelpIcon 
+                title="Email"
+                content="Enter the user's email address. This will be used for login. Email verification is disabled."
+              />
+            </div>
+            <input
+              type="email"
+              id="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter email address"
+              required
+            />
           </div>
 
           <div>
@@ -393,98 +463,68 @@ export default function UserManagement() {
                 <div>
                   <div className="flex items-center">
                     <label className="block text-sm font-medium text-gray-700">
-                      Chain
+                      Home
                     </label>
                     <HelpIcon 
-                      title="Chain"
-                      content="Select an existing chain. Chains group related care facilities together. To create a new chain, use the Home Management section."
+                      title="Home"
+                      content="Select an existing home. The home is the specific care facility the user will have access to. If you select a home first, the chain will be automatically set. To create a new home, use the Tenant Management section."
                     />
                   </div>
                   <select
-                    value={formData.chainId}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      chainId: e.target.value,
-                      homeId: '',
-                      createNewHome: false
-                    })}
+                    value={formData.homeId}
+                    onChange={(e) => {
+                      const selectedHomeId = e.target.value;
+                      const selectedHome = homes.find(h => h.id === selectedHomeId);
+                      setFormData({ 
+                        ...formData, 
+                        homeId: selectedHomeId,
+                        // Auto-populate chain when home is selected
+                        chainId: selectedHome?.chainId || formData.chainId
+                      });
+                    }}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     required
                   >
-                    <option value="">Select a chain</option>
-                    {chains.map((chain) => (
-                      <option key={chain.id} value={chain.id}>
-                        {chain.name}
+                    <option value="">Select a home</option>
+                    {/* Show all homes, but filter by chain if one is selected */}
+                    {(formData.chainId ? availableHomesForChain : homes).map((home) => (
+                      <option key={home.id} value={home.id}>
+                        {home.name} {home.chainId ? `(${getChainDisplayName(home.chainId)})` : ''}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {formData.chainId && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Home
-                      </label>
-                      <HelpIcon 
-                        title="Home"
-                        content="Select an existing home from the selected chain, or create a new home. The home is the specific care facility the user will have access to."
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({
-                          ...formData,
-                          createNewHome: false,
-                          homeId: ''
-                        })}
-                        className={`text-xs px-2 py-1 rounded-md ${!formData.createNewHome ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
-                      >
-                        Select Existing
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({
-                          ...formData,
-                          createNewHome: true,
-                          homeId: ''
-                        })}
-                        className={`text-xs px-2 py-1 rounded-md ${formData.createNewHome ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
-                      >
-                        Create New
-                      </button>
-                    </div>
-                  </div>
-
-                  {formData.createNewHome ? (
-                    <input
-                      type="text"
-                      value={formData.newHomeName}
-                      onChange={(e) => setFormData({ ...formData, newHomeName: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter new home name (e.g., Berkshire Care, Mill Creek Care)"
-                      required={formData.createNewHome}
-                    />
-                  ) : (
-                    <select
-                      value={formData.homeId}
-                      onChange={(e) => setFormData({ ...formData, homeId: e.target.value })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      required={!formData.createNewHome}
-                    >
-                      <option value="">Select a home</option>
-                      {availableHomesForChain.map((home) => (
-                        <option key={home.id} value={home.id}>
-                          {home.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+              <div>
+                <div className="flex items-center">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Chain
+                  </label>
+                  <HelpIcon 
+                    title="Chain"
+                    content="Select an existing chain. Chains group related care facilities together. To create a new chain, use the Tenant Management section. If you select a home first, the chain will be automatically set."
+                  />
                 </div>
-              )}
+                <select
+                  value={formData.chainId}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    chainId: e.target.value,
+                    // Clear home if it doesn't belong to the newly selected chain
+                    homeId: formData.homeId && homes.find(h => h.id === formData.homeId)?.chainId === e.target.value ? formData.homeId : ''
+                  })}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select a chain</option>
+                  {chains.map((chain) => (
+                    <option key={chain.id} value={chain.id}>
+                      {chain.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
             </>
           )}
@@ -499,9 +539,7 @@ export default function UserManagement() {
                   password: '',
                   role: 'homeUser',
                   chainId: '',
-                  homeId: '',
-                  createNewHome: false,
-                  newHomeName: ''
+                  homeId: ''
                 });
               }}
               className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -626,10 +664,62 @@ Note: When you change a home user's home, their chain will automatically update 
                 users.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {user.username || 'N/A'}
+                      {editingUserId === user.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingUsername}
+                            onChange={(e) => setEditingUsername(e.target.value)}
+                            className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-32"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleSaveEdit(user.id)}
+                            className="text-green-600 hover:text-green-800 transition-colors"
+                            title="Save"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Cancel"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="6" x2="6" y2="18"/>
+                              <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span>{user.username || 'N/A'}</span>
+                          <button
+                            onClick={() => handleStartEdit(user)}
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Edit username and email"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.email || 'N/A'}
+                      {editingUserId === user.id ? (
+                        <input
+                          type="email"
+                          value={editingEmail}
+                          onChange={(e) => setEditingEmail(e.target.value)}
+                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-48"
+                        />
+                      ) : (
+                        <span>{user.email || 'N/A'}</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
@@ -658,14 +748,13 @@ Note: When you change a home user's home, their chain will automatically update 
                             } else {
                               handleHomeChainChange(user.id, newHomeId, user.chainId || '');
                             }
-                          } else {
-                            handleHomeChainChange(user.id, '', user.chainId || '');
                           }
+                          // Removed else clause - users can no longer clear home assignment
                         }}
                         className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 min-w-[150px]"
                         title="Select a home to assign. The chain will be automatically updated to match the home's chain."
                       >
-                        <option value="">{user.homeId ? 'Remove home' : 'Select home'}</option>
+                        {!user.homeId && <option value="">Select home</option>}
                         {/* Show all homes - when a home is selected, chain will auto-update */}
                         {homes.map((home) => (
                           <option key={home.id} value={home.id}>
