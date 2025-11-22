@@ -235,7 +235,7 @@ export default function UserManagement() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        showMessage('User home and chain updated successfully!', 'success');
+        showMessage(data.message || 'User updated successfully!', 'success');
         fetchUsers();
       } else {
         showMessage(data.error || 'Failed to update user home/chain', 'error');
@@ -722,67 +722,59 @@ Note: When you change a home user's home, their chain will automatically update 
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {user.role === 'homeUser' ? (
-                        <select
-                          value={user.homeId || ''}
-                          onChange={(e) => {
-                            const newHomeId = e.target.value;
-                            if (newHomeId) {
-                              const selectedHome = homes.find(h => h.id === newHomeId);
-                              // Automatically set chain when home is selected
-                              const newChainId = selectedHome?.chainId || '';
-                              if (newChainId) {
-                                handleHomeChainChange(user.id, newHomeId, newChainId);
-                              } else {
-                                handleHomeChainChange(user.id, newHomeId, user.chainId || '');
-                              }
-                            } else {
-                              handleHomeChainChange(user.id, '', user.chainId || '');
-                            }
-                          }}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 min-w-[150px]"
-                          title="Select a home to reassign. The chain will be automatically updated to match the home's chain."
-                        >
-                          <option value="">Select home</option>
-                          {/* Show all homes - when a home is selected, chain will auto-update */}
-                          {homes.map((home) => (
-                            <option key={home.id} value={home.id}>
-                              {home.name} {home.chainId ? `(${getChainDisplayName(home.chainId)})` : ''}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-sm text-gray-500">{getHomeDisplayName(user.homeId)}</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {user.role === 'homeUser' ? (
-                        <select
-                          value={user.chainId || ''}
-                          onChange={(e) => {
-                            const newChainId = e.target.value;
+                      <select
+                        value={user.homeId || ''}
+                        onChange={(e) => {
+                          const newHomeId = e.target.value;
+                          if (newHomeId) {
+                            const selectedHome = homes.find(h => h.id === newHomeId);
+                            // Automatically set chain when home is selected
+                            const newChainId = selectedHome?.chainId || '';
                             if (newChainId) {
-                              // If current home doesn't belong to new chain, clear home selection
-                              const currentHome = homes.find(h => h.id === user.homeId);
-                              const newHomeId = (currentHome?.chainId === newChainId) ? (user.homeId || '') : '';
                               handleHomeChainChange(user.id, newHomeId, newChainId);
                             } else {
-                              handleHomeChainChange(user.id, user.homeId || '', '');
+                              handleHomeChainChange(user.id, newHomeId, user.chainId || '');
                             }
-                          }}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
-                          title="Select a chain to reassign. If the current home doesn't belong to the new chain, it will be cleared."
-                        >
-                          <option value="">Select chain</option>
-                          {chains.map((chain) => (
-                            <option key={chain.id} value={chain.id}>
-                              {chain.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-sm text-gray-500">{getChainDisplayName(user.chainId)}</span>
-                      )}
+                          } else {
+                            handleHomeChainChange(user.id, '', user.chainId || '');
+                          }
+                        }}
+                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 min-w-[150px]"
+                        title="Select a home to assign. The chain will be automatically updated to match the home's chain."
+                      >
+                        <option value="">{user.homeId ? 'Remove home' : 'Select home'}</option>
+                        {/* Show all homes - when a home is selected, chain will auto-update */}
+                        {homes.map((home) => (
+                          <option key={home.id} value={home.id}>
+                            {home.name} {home.chainId ? `(${getChainDisplayName(home.chainId)})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <select
+                        value={user.chainId || ''}
+                        onChange={(e) => {
+                          const newChainId = e.target.value;
+                          if (newChainId) {
+                            // If current home doesn't belong to new chain, clear home selection
+                            const currentHome = homes.find(h => h.id === user.homeId);
+                            const newHomeId = (currentHome?.chainId === newChainId) ? (user.homeId || '') : '';
+                            handleHomeChainChange(user.id, newHomeId, newChainId);
+                          } else {
+                            handleHomeChainChange(user.id, user.homeId || '', '');
+                          }
+                        }}
+                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                        title="Select a chain to assign. If the current home doesn't belong to the new chain, it will be cleared."
+                      >
+                        <option value="">{user.chainId ? 'Remove chain' : 'Select chain'}</option>
+                        {chains.map((chain) => (
+                          <option key={chain.id} value={chain.id}>
+                            {chain.name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.loginCount || 0}

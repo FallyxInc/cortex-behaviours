@@ -21,14 +21,6 @@ export async function PATCH(
 
     const userData = snapshot.val();
 
-    // Only allow updating home/chain for homeUser role
-    if (userData.role !== 'homeUser') {
-      return NextResponse.json(
-        { error: 'Home and chain can only be updated for homeUser role' },
-        { status: 400 }
-      );
-    }
-
     // Validate chain exists if provided
     if (chainId) {
       const chainRef = adminDb.ref(`/chains/${chainId}`);
@@ -70,7 +62,7 @@ export async function PATCH(
           await userRef.update({ homeId, chainId: homeData.chainId });
           return NextResponse.json({
             success: true,
-            message: 'User home and chain updated successfully'
+            message: 'User home updated successfully'
           });
         }
       }
@@ -83,9 +75,21 @@ export async function PATCH(
 
     await userRef.update(updates);
 
+    // Determine message based on what was updated
+    let message = '';
+    if (homeId && chainId) {
+      message = 'User home and chain updated successfully';
+    } else if (homeId) {
+      message = 'User home updated successfully';
+    } else if (chainId) {
+      message = 'User chain updated successfully';
+    } else {
+      message = 'User updated successfully';
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'User home and chain updated successfully'
+      message: message
     });
 
   } catch (error: unknown) {

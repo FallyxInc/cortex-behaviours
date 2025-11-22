@@ -30,15 +30,32 @@ export default function Login() {
         const updatedLoginCount = (userData.loginCount || 0) + 1;
         await set(ref(db, `users/${userId}/loginCount`), updatedLoginCount);
 
-        let role = userSnapshot.val().role;
-        const roleMapping: { [key: string]: string } = {
-          'niagara-ltc': 'niagara',
-          'generations': 'generations',
-          'shepherd': 'shepherd',
-        };
+        const role = userData.role;
         
-        role = roleMapping[role] || role;
-        router.push('/' + role);
+        // Route based on role
+        if (role === 'admin') {
+          // Admin users go to admin dashboard
+          router.push('/admin');
+        } else if (role === 'homeUser') {
+          // Home users go to their assigned home dashboard
+          const homeId = userData.homeId;
+          if (homeId) {
+            router.push(`/${homeId}`);
+          } else {
+            // If homeUser doesn't have a homeId, show error
+            setErrorMessage('Your account is not assigned to a home. Please contact an administrator.');
+          }
+        } else {
+          // Legacy role mappings for old home-based roles
+          const roleMapping: { [key: string]: string } = {
+            'niagara-ltc': 'niagara',
+            'generations': 'generations',
+            'shepherd': 'shepherd',
+          };
+          
+          const mappedRole = roleMapping[role] || role;
+          router.push('/' + mappedRole);
+        }
       }
     } catch (error) {
       console.error('Error during login:', error);
